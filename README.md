@@ -3,7 +3,6 @@
 This project demonstrates a way to run the [OSDU Community Implementation](https://gitlab.opengroup.org/osdu/pmc/community-implementation/-/tree/main) native to Azure while using concepts from the [OSDU Developer](https://github.com/azure/osdu-developer) project.
 
 
-
 ## Register the feature flags
 
 To use AKS Automatic in preview, you must register feature flags for other required features. Register the following flags using the [az feature register](https://learn.microsoft.com/en-us/cli/azure/feature?view=azure-cli-latest#az-feature-register) command.

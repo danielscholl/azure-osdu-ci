@@ -59,6 +59,7 @@ var configuration = {
   cluster: {
     sku: 'Base'  // 'Base'or 'Automatic'
     tier: 'Standard'
+    version: '1.31'
     vmSize: vmSize
   }
   features: {
@@ -132,7 +133,7 @@ module managedCluster './managed-cluster/main.bicep' = {
 
     skuTier: configuration.cluster.tier
     skuName: configuration.cluster.sku
-
+    kubernetesVersion: configuration.cluster.version
     diagnosticSettings: [
       {
         name: 'customSetting'
@@ -438,8 +439,28 @@ var elasticSecrets = [for i in range(0, configuration.features.instances): [
   }
 ]]
 
+// Elastic secrets, flattened to individual objects
+var postgresqlSecrets = [for i in range(0, configuration.features.instances): [
+  {
+    secretName: 'cpng-user-name-${i}'
+    secretValue: 'dbuser'
+  }
+  {
+    secretName: 'cpng-user-password-${i}'
+    secretValue: substring(uniqueString(resourceGroup().id, location, 'postgresql-user-saltpass${i}'), 0, 13)
+  }
+  {
+    secretName: 'cpng-superuser-name-${i}'
+    secretValue: 'dbadmin'
+  }
+  {
+    secretName: 'cpng-superuser-password-${i}'
+    secretValue: substring(uniqueString(resourceGroup().id, location, 'postgresql-superuser-saltpass${i}'), 0, 13)
+  }
+]]
+
 // Use array concatenation to join the static and elastic secrets
-var vaultSecrets = union(staticSecrets, flatten(elasticSecrets))
+var vaultSecrets = union(staticSecrets, flatten(elasticSecrets), flatten(postgresqlSecrets))
 
 
 module keyvault 'br/public:avm/res/key-vault/vault:0.9.0' = {

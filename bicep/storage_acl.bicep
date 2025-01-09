@@ -4,7 +4,7 @@ param storageName string
 @description('The location of the Azure Storage Account')
 param location string
 
-@description('The SKU name of the Azure Storage Account') 
+@description('The SKU name of the Azure Storage Account')
 param skuName string
 
 @description('The IP address of the NAT cluster')
@@ -22,6 +22,8 @@ resource updateNetworkRules 'Microsoft.Storage/storageAccounts@2022-09-01' =  {
     name: skuName
   }
   properties: {
+
+    allowBlobPublicAccess: false
 
     networkAcls: {
       bypass: 'AzureServices'

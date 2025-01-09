@@ -57,15 +57,16 @@ var configuration = {
     sku: 'Standard'
   }
   cluster: {
-    sku: 'Base'  // or 'Automatic'
+    sku: 'Base'  // 'Base'or 'Automatic'
     tier: 'Standard'
     vmSize: vmSize
   }
   features: {
     enablePrivateSoftware: sourceHost == 'azureBlob' && sourceHost != ''
-    enableMesh: false
+    enableMesh: true
     enablePaasPool: false
     enableStampTest: true
+    enableStampOSDU: true
     enableBackup: enableAKSBackup
     instances: 1
   }
@@ -1036,6 +1037,16 @@ module fluxConfiguration './flux-configuration/main.bicep' = {
           prune: true
         }
       } : {})
+      ...(configuration.features.enableStampOSDU ? {
+        osdu_ci: {
+          path: './software/stamp-osdu'
+          dependsOn: ['global']
+          syncIntervalInSeconds: 300
+          timeoutInSeconds: 300
+          validation: 'none'
+          prune: true
+        }
+      } : {})
     }
   }
   dependsOn: configuration.features.enablePrivateSoftware ? [
@@ -1054,6 +1065,7 @@ module storageAcl './storage_acl.bicep' = if (!configuration.features.enableBack
     storageName: storageAccount.outputs.name
     location: location
     skuName: configuration.storage.sku
+
     natClusterIP: natClusterIP.outputs.ipAddress
   }
   dependsOn: [

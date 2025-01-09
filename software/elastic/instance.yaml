@@ -30,6 +30,6 @@ spec:
   values:
     elasticsearch:
       instances:
-        - version: 8.7.1
+        - version: 8.15.2
           storage:
             size: 30Gi

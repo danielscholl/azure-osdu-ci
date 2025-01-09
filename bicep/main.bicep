@@ -65,7 +65,7 @@ var configuration = {
     enablePrivateSoftware: sourceHost == 'azureBlob' && sourceHost != ''
     enableMesh: true
     enablePaasPool: false
-    enableStampTest: true
+    enableStampTest: false
     enableStampOSDU: true
     enableBackup: enableAKSBackup
     instances: 1
@@ -1038,7 +1038,7 @@ module fluxConfiguration './flux-configuration/main.bicep' = {
         }
       } : {})
       ...(configuration.features.enableStampOSDU ? {
-        osdu_ci: {
+        'osdu-ci': {
           path: './software/stamp-osdu'
           dependsOn: ['global']
           syncIntervalInSeconds: 300

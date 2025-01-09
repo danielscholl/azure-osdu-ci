@@ -1,0 +1,52 @@
+{{- $elasticInstances := .Values.elasticInstances | default 1 | int }}
+{{- range $i := until $elasticInstances }}
+---
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch-{{ $i }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  version: {{ $.Values.elasticVersion }}
+  config:
+    # Azure Repository Plugin settings
+    repository.azure.client.default.account: {{ $.Values.azure.storageAccountName }}
+    repository.azure.client.default.auth: "MSI"
+    repository.azure.token_file: "/var/run/secrets/azure/tokens/azure-identity-token"
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+    service:
+      spec:
+        type: ClusterIP
+  nodeSets:
+    - name: default
+      count: 1
+      plugins:
+        - repository-azure
+      config:
+        # Disable memory mapping to avoid vm.max_map_count bootstrap check
+        node.store.allow_mmap: false
+      podTemplate:
+        metadata:
+          labels:
+            azure.workload.identity/use: "true"
+        spec:
+          serviceAccountName: workload-identity-sa
+          containers:
+            - name: elasticsearch
+              env:
+                - name: AZURE_FEDERATED_TOKEN_FILE
+                  value: /var/run/secrets/azure/tokens/azure-identity-token
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            resources:
+              requests:
+                storage: {{ $.Values.storageSize }}
+            storageClassName: {{ $.Values.storageClass | default "managed-premium" }}      
+{{- end }}

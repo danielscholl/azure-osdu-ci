@@ -5,4 +5,4 @@ metadata:
   name: cert-manager
   labels:
     istio-injection: disabled
-    toolkit.fluxcd.io/tenant: component
+    toolkit.fluxcd.io/tenant: software-stamp

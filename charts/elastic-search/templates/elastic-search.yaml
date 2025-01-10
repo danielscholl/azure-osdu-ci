@@ -6,6 +6,8 @@ kind: Elasticsearch
 metadata:
   name: elasticsearch-{{ $i }}
   namespace: {{ $.Release.Namespace }}
+  annotations:
+    eck.k8s.elastic.co/downward-node-labels: "topology.kubernetes.io/zone"
 spec:
   version: {{ $.Values.elasticVersion }}
   config:

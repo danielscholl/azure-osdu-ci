@@ -338,6 +338,14 @@ var federatedIdentityCredentials = [
     subject: 'system:serviceaccount:elastic:workload-identity-sa'
   }
   {
+    name: 'federated-ns_postgresql'
+    subject: 'system:serviceaccount:postgresql:workload-identity-sa'
+  }
+  {
+    name: 'federated-ns_redis'
+    subject: 'system:serviceaccount:redis:workload-identity-sa'
+  }
+  {
     name: 'federated-ns_flux-system'
     subject: 'system:serviceaccount:flux-system:source-controller'
   }

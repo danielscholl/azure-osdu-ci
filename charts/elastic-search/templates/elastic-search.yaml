@@ -28,6 +28,8 @@ spec:
       config:
         # Disable memory mapping to avoid vm.max_map_count bootstrap check
         node.store.allow_mmap: false
+        node.attr.zone: "${ZONE}"
+        cluster.routing.allocation.awareness.attributes: k8s_node_name,zone
       podTemplate:
         metadata:
           labels:
@@ -39,6 +41,36 @@ spec:
               env:
                 - name: AZURE_FEDERATED_TOKEN_FILE
                   value: /var/run/secrets/azure/tokens/azure-identity-token
+          tolerations:
+            - effect: NoSchedule
+              key: app
+              value: "cluster"
+          affinity:
+            nodeAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                nodeSelectorTerms:
+                  - matchExpressions:
+                      - key: agentpool
+                        operator: In
+                        values:
+                          - z1pool
+                          - z2pool
+                          - z3pool
+                  - matchExpressions:
+                      - key: topology.kubernetes.io/zone
+                        operator: In
+                        values:
+                          - "$(ZONE)-1"
+                          - "$(ZONE)-2"
+                          - "$(ZONE)-3"
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: topology.kubernetes.io/zone
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  elasticsearch.k8s.elastic.co/cluster-name: elasticsearch
+                  elasticsearch.k8s.elastic.co/statefulset-name: elasticsearch-es-default
       volumeClaimTemplates:
         - metadata:
             name: elasticsearch-data
@@ -48,5 +80,5 @@ spec:
             resources:
               requests:
                 storage: {{ $.Values.storageSize }}
-            storageClassName: {{ $.Values.storageClass | default "managed-premium" }}      
+            storageClassName: {{ $.Values.storageClass | default "managed-premium" }}
 {{- end }}

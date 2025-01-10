@@ -59,13 +59,13 @@ var configuration = {
   cluster: {
     sku: 'Base'  // 'Base'or 'Automatic'
     tier: 'Standard'
-    version: '1.31'
+    version: '1.31.2'
     vmSize: vmSize
   }
   features: {
     enablePrivateSoftware: sourceHost == 'azureBlob' && sourceHost != ''
     enableMesh: true
-    enablePaasPool: false
+    enablePaasPool: true
     enableStampTest: false
     enableStampOSDU: true
     enableBackup: enableAKSBackup
@@ -278,7 +278,7 @@ module managedCluster './managed-cluster/main.bicep' = {
       }
     ], configuration.features.enablePaasPool ? [
       {
-        name: 'paaspool'
+        name: 'z1pool'
         mode: 'User'
         vmSize: configuration.cluster.vmSize
         count: 1
@@ -287,6 +287,45 @@ module managedCluster './managed-cluster/main.bicep' = {
         }
         osType: 'Linux'
         osSKU: 'AzureLinux'
+        availabilityZones: [
+          '1'
+        ]
+        nodeTaints: ['app=cluster-paas:NoSchedule']
+        nodeLabels: {
+          app: 'cluster-paas'
+        }
+      }
+      {
+        name: 'z2pool'
+        mode: 'User'
+        vmSize: configuration.cluster.vmSize
+        count: 1
+        securityProfile: {
+          sshAccess: 'Disabled'
+        }
+        osType: 'Linux'
+        osSKU: 'AzureLinux'
+        availabilityZones: [
+          '2'
+        ]
+        nodeTaints: ['app=cluster-paas:NoSchedule']
+        nodeLabels: {
+          app: 'cluster-paas'
+        }
+      }
+      {
+        name: 'z3pool'
+        mode: 'User'
+        vmSize: configuration.cluster.vmSize
+        count: 1
+        securityProfile: {
+          sshAccess: 'Disabled'
+        }
+        osType: 'Linux'
+        osSKU: 'AzureLinux'
+        availabilityZones: [
+          '3'
+        ]
         nodeTaints: ['app=cluster-paas:NoSchedule']
         nodeLabels: {
           app: 'cluster-paas'

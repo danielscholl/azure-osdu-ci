@@ -1,10 +1,42 @@
+{{- define "postgresql.getNextPremiumSize" -}}
+{{- /* Input is in GB, output is next valid premium size in GB */ -}}
+{{- $size := . -}}
+{{- if lt $size 4 -}}
+  {{- $size = 4 -}}
+{{- else if le $size 8 -}}
+  {{- $size = 8 -}}
+{{- else if le $size 16 -}}
+  {{- $size = 16 -}}
+{{- else if le $size 32 -}}
+  {{- $size = 32 -}}
+{{- else if le $size 64 -}}
+  {{- $size = 64 -}}
+{{- else if le $size 128 -}}
+  {{- $size = 128 -}}
+{{- else if le $size 256 -}}
+  {{- $size = 256 -}}
+{{- else if le $size 512 -}}
+  {{- $size = 512 -}}
+{{- else if le $size 1024 -}}
+  {{- $size = 1024 -}}
+{{- else if le $size 2048 -}}
+  {{- $size = 2048 -}}
+{{- else if le $size 4096 -}}
+  {{- $size = 4096 -}}
+{{- else -}}
+  {{- $size = 8192 -}}
+{{- end -}}
+{{- printf "%dGi" $size -}}
+{{- end -}}
+
+{{- if .Values.databases -}}
 {{- range .Values.databases }}
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: {{ .name }}-cluster
-  namespace: postgresql
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   inheritedMetadata:
     labels:
@@ -17,11 +49,13 @@ spec:
       labels:
         azure.workload.identity/use: "true"
 
-  instances: {{ .instances | default 3 }}
+  instances: {{ .instances | default 1 }}
   startDelay: 30
   stopDelay: 30
-  minSyncReplicas: 1
-  maxSyncReplicas: 1
+  {{- $instances := .instances | default 1 | int -}}
+  {{- if gt $instances 1 }}
+  minSyncReplicas: {{ .syncReplicas | default 0 }}
+  maxSyncReplicas: {{ .syncReplicas | default 0 }}
 
   replicationSlots:
     highAvailability:
@@ -34,13 +68,27 @@ spec:
     whenUnsatisfiable: DoNotSchedule
     labelSelector:
       matchLabels:
-        cnpg.io/cluster: {{ .name }}-cluster
+        cnpg.io/cluster: {{ .name }}
+  {{- end }}
 
+  {{- if .affinity }}
   affinity:
+    enablePodAntiAffinity: true
+    topologyKey: topology.kubernetes.io/zone
     tolerations:
-    - effect: NoSchedule
-      key: app
-      value: "cluster"
+      - effect: NoSchedule
+        key: app
+        value: {{ .affinity.toleration }}
+    nodeSelector:
+      kubernetes.io/os: linux
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: agentpool
+                operator: In
+                values: {{ .affinity.agentPools | toJson }}
+  {{- end }}
 
   {{- if .resources }}
   resources:
@@ -62,41 +110,91 @@ spec:
 
   bootstrap:
     initdb:
-      database: {{ .name }}-db
+      database: {{ .name }}
       owner: dbuser
       secret:
         name: postgresql-user-credentials
       dataChecksums: true
 
+  {{- $mainSize := "4Gi" -}}
+  {{- if .storage }}
+    {{- $mainSize = .storage.size | default "4Gi" -}}
+  {{- end }}
   storage:
-    size: 2Gi
-    pvcTemplate:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 2Gi
-      storageClassName: managed-csi-premium
+    size: {{ $mainSize }}
+    storageClass: managed-csi-premium
 
   walStorage:
-    size: 2Gi
-    pvcTemplate:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 2Gi
-      storageClassName: managed-csi-premium
+    size: {{ $mainSize }}
+    storageClass: managed-csi-premium
 
-  # monitoring:
-  #   enablePodMonitor: true
-
-
+  {{- if .monitoring }}
+  monitoring:
+    enablePodMonitor: true
+  {{- end }}
 
   superuserSecret:
     name: postgresql-superuser-credentials
 
   postgresql:
     pg_hba:
-      - host {{ .name }}-db airflow all password
+      - host {{ .name }} airflow all password
+{{- end }}
+{{- else }}
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgresql-db
+  namespace: {{ .Release.Namespace }}
+spec:
+  inheritedMetadata:
+    labels:
+      azure.workload.identity/use: "true"
+
+  serviceAccountTemplate:
+    metadata:
+      annotations:
+        azure.workload.identity/client-id: workload-identity-sa
+      labels:
+        azure.workload.identity/use: "true"
+
+  instances: 1
+  startDelay: 30
+  stopDelay: 30
+
+  bootstrap:
+    initdb:
+      database: postgresql-db
+      owner: dbuser
+      secret:
+        name: postgresql-user-credentials
+      dataChecksums: true
+
+  storage:
+    size: 4Gi
+  pvcTemplate:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: 4Gi
+    storageClassName: managed-csi-premium
+
+  walStorage:
+    size: 4Gi
+    pvcTemplate:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 4Gi
+      storageClassName: managed-csi-premium
+
+  superuserSecret:
+    name: postgresql-superuser-credentials
+
+  postgresql:
+    pg_hba:
+      - host postgresql-db airflow all password
 {{- end }}

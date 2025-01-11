@@ -1,6 +1,48 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-fullnameOverride: postgresql
+# -- Override the full name of the chart
+# @optional
+fullnameOverride: ""
 
-instances: 1
+# -- Azure configuration settings
+azure:
+  # -- Optional: Azure App Configuration endpoint
+  configEndpoint: ""
+
+# -- List of PostgreSQL databases to create
+databases:
+  # Each database supports the following configuration:
+  #
+  # name: (required) Name of the database cluster (use lowercase and hyphens)
+  # instances: (optional) Number of PostgreSQL instances (default: 3)
+  # syncReplicas: (optional) Number of synchronous replicas (must be less than instances-1)
+  # monitoring: (optional) Enable monitoring for this database (default: false)
+  # resources: (optional) Resource requests and limits
+  #   memory: Memory per instance
+  #   cpu: CPU cores per instance
+  # affinity: (optional) Pod placement configuration
+  #   agentPools: List of agent pool names for pod distribution
+  #   toleration: Toleration key for pod scheduling
+  # storage: (optional) Persistent storage configuration
+  #   size: Storage size per instance (default: 1Gi)
+
+  # Example configurations:
+
+  # Default minimal configuration
+  # - name: simple-db
+  #   instances: 1
+
+  # Multi-instance clustered database with full configuration
+  # - name: cluster-db
+  #   instances: 3
+  #   syncReplicas: 1
+  #   monitoring: true
+  #   resources:
+  #     memory: 2Gi
+  #     cpu: 1
+  #   affinity:
+  #     agentPools: ["z1pool", "z2pool", "z3pool"]
+  #     toleration: "cluster-paas"
+  #   storage:
+  #     size: 4Gi

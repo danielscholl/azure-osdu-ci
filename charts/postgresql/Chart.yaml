@@ -1,8 +1,8 @@
 apiVersion: v2
-name: PostgreSQL
+name: postgresql
 type: application
 description: Installs PostgreSQL Instances
-version: 0.0.1x
+version: 0.0.1
 appVersion: 0.0.1
 maintainers:
   - name: danielscholl

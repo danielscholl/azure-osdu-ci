@@ -1,0 +1,9 @@
+apiVersion: v2
+name: PostgreSQL
+type: application
+description: Installs PostgreSQL Instances
+version: 0.0.1x
+appVersion: 0.0.1
+maintainers:
+  - name: danielscholl
+    url: https://github.com/danielscholl

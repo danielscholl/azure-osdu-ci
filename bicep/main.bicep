@@ -506,8 +506,15 @@ var postgresqlSecrets = [for i in range(0, configuration.features.instances): [
   }
 ]]
 
+var redisSecrets = [for i in range(0, configuration.features.instances): [
+  {
+    secretName: 'redis-password-${i}'
+    secretValue: substring(uniqueString(resourceGroup().id, location, 'redis-saltpass${i}'), 0, 13)
+  }
+]]
+
 // Use array concatenation to join the static and elastic secrets
-var vaultSecrets = union(staticSecrets, flatten(elasticSecrets), flatten(postgresqlSecrets))
+var vaultSecrets = union(staticSecrets, flatten(elasticSecrets), flatten(postgresqlSecrets), flatten(redisSecrets))
 
 
 module keyvault 'br/public:avm/res/key-vault/vault:0.9.0' = {

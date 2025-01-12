@@ -29,8 +29,15 @@ spec:
       valuesKey: values.yaml
   values:
     databases:
-      - name: airflow
+      - name: airflow-cluster
         instances: 3
+        syncReplicas: 1
+        monitoring: true
         resources:
           memory: 2Gi
           cpu: 1
+        affinity:
+          agentPools: ["z1pool", "z2pool", "z3pool"]
+          toleration: "cluster-paas"
+        storage:
+          size: 4Gi

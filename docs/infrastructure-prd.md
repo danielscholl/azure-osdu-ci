@@ -72,6 +72,7 @@ This separation allows:
 - Simplified infrastructure updates
 
 **Configuration Management**
+
 1. **Azure App Configuration**
    - Stores non-sensitive configuration values
    - Environment-specific settings
@@ -97,6 +98,7 @@ This separation allows:
    - Service mesh integration
 
 **Monitoring and Observability**
+
 1. **Azure Monitor**
    - Managed Prometheus metrics
    - Managed Grafana dashboards
@@ -104,6 +106,7 @@ This separation allows:
    - Diagnostic settings
 
 **Implementation Notes**
+
 1. **Azure Developer CLI (azd)**:
    - `azd provision`: Infrastructure deployment only
    - `azd env`: Environment management
@@ -116,10 +119,3 @@ This separation allows:
    - Configuration values populated to App Config
    - Secrets stored in Key Vault
 
-**Testing**
-1. **Validation**:
-   - Bicep linting and security scans
-   - Infrastructure deployment testing
-2. **Integration**:
-   - End-to-end environment validation
-   - GitOps sync verification

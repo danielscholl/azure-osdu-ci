@@ -52,6 +52,7 @@ flowchart LR
 ```
 
 **Configuration Flow**
+
 ```mermaid
 flowchart LR
     subgraph Infrastructure
@@ -122,6 +123,7 @@ A software package (component) is a directory that contains the configuration fo
      ```
 
 4. **Implementation Example: Sample Application with Database**
+
    ```
    software/
    ├── stamp-global/           # Global environment
@@ -186,57 +188,29 @@ This example demonstrates:
 **Key Components**
 
 1. **Flux System**
+
    - Installed via AZD in `flux-system`
    - Monitors Git repository
    - Manages HelmReleases
 
 2. **Component Configuration**
+
    - `namespace.yaml`: Kubernetes namespace
    - `operator.yaml`: Component operator setup
    - `instance.yaml`: HelmRelease referencing charts
    - `vault-secrets.yaml`: Secret management
 
 3. **Helm Charts**
+
    - Located in `charts/` directory
    - Contains K8s manifest templates
    - Configurable via values.yaml
    - Referenced by HelmReleases
 
 4. **Configuration Management**
+
    - AppConfigurationProvider creates ConfigMaps
    - Vault CSI driver mounts secrets
    - Values injected into Helm releases
    - Environment-specific settings
 
-**Implementation**
-
-1. **Namespace Management**
-   - Dedicated namespaces per component
-   - Controlled by Flux Kustomizations
-   - Hierarchical organization
-
-2. **Helm Deployments**
-   - HelmRelease defines installation config
-   - References local chart in `charts/` directory
-   - Values from ConfigMaps or KeyVault
-   - Supports dependencies between releases
-   - Automated reconciliation
-
-3. **Security**
-   - KeyVault integration via CSI
-   - Workload Identity enabled
-   - Certificate management
-   - RBAC configurations
-
-**Testing**
-
-1. **Validation**
-   - Helm lint and template testing
-   - GitOps sync verification
-2. **Environments**
-   - Feature testing in dev/staging
-
-**Future Work**
-
-- Automated image updates
-- Enhanced chart reusability

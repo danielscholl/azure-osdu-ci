@@ -1,0 +1,33 @@
+{
+  "output": {
+    "filePath": "codebase.md",
+    "style": "plain",
+    "fileSummary": true,
+    "directoryStructure": true,
+    "removeComments": false,
+    "removeEmptyLines": false,
+    "topFilesLength": 5,
+    "showLineNumbers": false,
+    "copyToClipboard": false
+  },
+  "include": [],
+  "ignore": {
+    "useGitignore": true,
+    "useDefaultPatterns": true,
+    "customPatterns": [
+      "codebase.md",
+      "prompt.txt",
+      "software/stamp-global/gateway-api-crd.yaml",
+      "**/*.md",
+      "bicep/**/test/**",
+      "bicep/**/tests/**",
+      "**/*.json"
+    ]
+  },
+  "security": {
+    "enableSecurityCheck": true
+  },
+  "tokenCount": {
+    "encoding": "o200k_base"
+  }
+}

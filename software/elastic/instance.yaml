@@ -32,4 +32,4 @@ spec:
       instances:
         - version: 8.15.2
           storage:
-            size: 30Gi
+            size: 4Gi

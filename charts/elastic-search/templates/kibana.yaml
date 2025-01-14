@@ -36,6 +36,32 @@ spec:
   count: 1
   podTemplate:
     spec:
+      {{- if $.Values.nodeSelector }}
+      {{- if $.Values.nodeSelector.toleration }}
+      tolerations:
+      - effect: NoSchedule
+        key: app
+        value: {{ $.Values.nodeSelector.toleration }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: agentpool
+                operator: In
+                values:
+                - z1pool
+                - z2pool
+                - z3pool
+            - matchExpressions:
+              - key: topology.kubernetes.io/zone
+                operator: In
+                values:
+                - "$(ZONE)-1"
+                - "$(ZONE)-2"
+                - "$(ZONE)-3"
+      {{- end }}
+      {{- end }}
       initContainers:
       - name: health-check
         image: mcr.microsoft.com/cbl-mariner/base/core:2.0

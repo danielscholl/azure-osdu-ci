@@ -10,7 +10,7 @@ This Helm chart deploys Elasticsearch instances on Kubernetes with support for m
 
 ## Features
 
-- Zone awareness for high availability
+- Optional node placement and zone awareness
 - Optional Azure integration for enhanced features
 - Automatic plugin installation
 - Kibana deployment with secure authentication
@@ -19,11 +19,16 @@ This Helm chart deploys Elasticsearch instances on Kubernetes with support for m
 ## Deployment Modes
 
 ### Basic Mode (Default)
-When deployed without Azure configuration, the chart will:
+When deployed without any additional configuration, the chart will:
 - Deploy Elasticsearch with ECK operator management
 - Configure Kibana with secure service account authentication
-- Use built-in high availability features
-- Work out of the box with minimal configuration
+- Use default node placement
+
+### Node Placement Mode
+When nodeSelector configuration is provided, the chart enables:
+- Specific node pool targeting
+- Zone awareness for high availability
+- Custom toleration support
 
 ### Azure-Integrated Mode
 When Azure configuration is provided, the chart enables:
@@ -34,7 +39,7 @@ When Azure configuration is provided, the chart enables:
 
 ## High Availability Architecture
 
-Each Elasticsearch instance is configured for high availability by default:
+Each Elasticsearch instance is configured for high availability when node placement is enabled:
 
 - Automatically deploys as a 3-node cluster (managed by ECK)
 - Nodes are distributed across your availability zones
@@ -54,7 +59,7 @@ The chart supports deploying multiple separate Elasticsearch clusters (instances
 - Setting `elasticInstances: 1` deploys a single 3-node Elasticsearch cluster
 - Setting `elasticInstances: 2` deploys two separate 3-node Elasticsearch clusters
 
-Each instance is a complete, independent Elasticsearch deployment with its own high availability configuration.
+Each instance is a complete, independent Elasticsearch deployment with its own configuration.
 
 ## Parameters
 
@@ -66,7 +71,7 @@ The following table lists the configurable parameters of the Elasticsearch chart
 | `elasticVersion`                   | Elasticsearch version to deploy                  | `8.17.0`                          |
 | `storageSize`                      | Storage size for each Elasticsearch node         | `4Gi`                             |
 | `storageClass`                     | Storage class for persistence                    | `managed-premium`                 |
-| `resiliency`                       | Enable node affinity and tolerations             | `true`                            |
+| `nodeSelector.toleration`          | Toleration value for node placement              | `nil`                             |
 | `azure`                            | Azure integration configuration (optional)        | `{}`                              |
 | `azure.configEndpoint`             | Azure App Configuration endpoint                 | `nil`                             |
 | `azure.storageAccountName`         | Azure Storage Account for snapshots             | `nil`                             |
@@ -84,9 +89,18 @@ The chart will work with minimal configuration. For a basic installation:
 helm install elasticsearch ./elastic-search
 ```
 
+### Node Placement Configuration
+
+To enable node placement and zone awareness, specify the toleration:
+
+```yaml
+nodeSelector:
+  toleration: "cluster-paas"  # Enables node placement with this toleration value
+```
+
 ### Azure-Integrated Installation
 
-To enable Azure integration, provide the necessary Azure configuration. The minimal configuration requires:
+To enable Azure integration, provide the necessary Azure configuration:
 
 ```yaml
 azure:
@@ -121,7 +135,8 @@ storageSize: "100Gi"
 elasticInstances: 2  # Deploys two separate clusters
 ```
 
-3. To disable resiliency features:
+3. To enable node placement with custom toleration:
 ```yaml
-resiliency: false
+nodeSelector:
+  toleration: "my-custom-toleration"
 ```

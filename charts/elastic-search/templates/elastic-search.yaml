@@ -27,29 +27,12 @@ spec:
         {{- if $.Values.azure }}
         serviceAccountName: workload-identity-sa
         {{- end }}
-        containers:
-        - name: elasticsearch
-          {{- if $.Values.azure }}
-          env:
-          - name: AZURE_FEDERATED_TOKEN_FILE
-            value: /usr/share/elasticsearch/config/azure/tokens/azure-identity-token
-          - name: NODE_ZONE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.annotations['topology.kubernetes.io/zone']
-          {{- end }}
-          resources:
-            {{- toYaml $.Values.resources | nindent 12 }}
-          {{- if $.Values.azure }}
-          volumeMounts:
-            - name: azure-identity-token
-              mountPath: /usr/share/elasticsearch/config/azure/tokens
-          {{- end }}
-        {{- if $.Values.resiliency }}
+        {{- if $.Values.nodeSelector }}
+        {{- if $.Values.nodeSelector.toleration }}
         tolerations:
         - effect: NoSchedule
           key: app
-          value: "cluster-paas"
+          value: {{ $.Values.nodeSelector.toleration }}
         affinity:
           nodeAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -69,6 +52,25 @@ spec:
                   - "$(ZONE)-2"
                   - "$(ZONE)-3"
         {{- end }}
+        {{- end }}
+        containers:
+        - name: elasticsearch
+          {{- if $.Values.azure }}
+          env:
+          - name: AZURE_FEDERATED_TOKEN_FILE
+            value: /usr/share/elasticsearch/config/azure/tokens/azure-identity-token
+          - name: NODE_ZONE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.annotations['topology.kubernetes.io/zone']
+          {{- end }}
+          resources:
+            {{- toYaml $.Values.resources | nindent 12 }}
+          {{- if $.Values.azure }}
+          volumeMounts:
+            - name: azure-identity-token
+              mountPath: /usr/share/elasticsearch/config/azure/tokens
+          {{- end }}
     config:
       node.store.allow_mmap: false
       node.roles: ["master", "data", "ingest"]

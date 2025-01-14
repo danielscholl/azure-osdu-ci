@@ -31,5 +31,6 @@ spec:
     elasticsearch:
       instances:
         - version: 8.17.0
-          storage:
-            size: 4Gi
+          nodeSelector:
+            toleration: "cluster-paas"
+

@@ -11,6 +11,15 @@ azure:
 
 elasticInstances: 1
 elasticVersion: "8.17.0"
-storageSize: "30Gi"
-storageClass: "managed-premium"
+# storageSize: "4Gi"
+# storageClass: "managed-premium"
+
+# Resource limits and requests
+resources: {}
+  # requests:
+  #   cpu: "2"
+  #   memory: "4Gi"
+  # limits:
+  #   cpu: "4"
+  #   memory: "8Gi"
 

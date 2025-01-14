@@ -16,178 +16,94 @@ This Helm chart deploys Elasticsearch instances on Kubernetes with support for m
 - Automatic plugin installation
 - Workload Identity integration for secure Azure authentication
 
+## High Availability Architecture
+
+Each Elasticsearch instance is configured for high availability by default:
+
+- Automatically deploys as a 3-node cluster (managed by ECK)
+- Nodes are distributed across your availability zones
+- Each node is both a data node and master-eligible node
+- Default index replica count of 1 ensures data redundancy
+- Automatic shard allocation awareness based on zones
+
+This architecture provides:
+- No single point of failure
+- Data redundancy across zones
+- Continued operation if one zone fails
+- Balanced resource utilization
+
+## Multiple Instances
+
+The chart supports deploying multiple separate Elasticsearch clusters (instances) if needed. For example:
+- Setting `elasticInstances: 1` deploys a single 3-node Elasticsearch cluster
+- Setting `elasticInstances: 2` deploys two separate 3-node Elasticsearch clusters
+
+Each instance is a complete, independent Elasticsearch deployment with its own high availability configuration.
+
 ## Parameters
 
-The following table lists the configurable parameters of the Elasticsearch chart and their default values:
+The following table lists the configurable parameters of the Elasticsearch chart and their default values. All parameters are optional and will use their defaults if not specified:
 
 | Parameter                           | Description                                      | Default                           |
 |------------------------------------|--------------------------------------------------|-----------------------------------|
-| `elasticInstances`                 | Number of Elasticsearch nodes                    | `1`                               |
+| `elasticInstances`                 | Number of separate Elasticsearch deployments     | `1`                               |
 | `elasticVersion`                   | Elasticsearch version to deploy                  | `8.17.0`                          |
-| `storageSize`                      | Storage size for each Elasticsearch node         | `30Gi`                            |
+| `storageSize`                      | Storage size for each Elasticsearch node         | `4Gi` (minimum for managed-premium)|
 | `storageClass`                     | Storage class for persistence                    | `managed-premium`                 |
-| `azure.storageAccountName`         | Azure Storage Account for snapshots             | `""`                              |
+| `azure.snapshots.storageAccountName`| Azure Storage Account for snapshots             | `el-snapshots`                    |
+| `azure.snapshots.containerName`    | Azure Storage Container for snapshots           | `snapshots`                       |
+| `resources.requests.memory`        | Memory request for each ES node                 | `2Gi`                             |
+| `resources.limits.memory`          | Memory limit for each ES node                   | `2Gi`                             |
 
-## Configuration Examples
+> Note: All parameters have built-in defaults defined in values.yaml. You only need to create a `custom_values.yaml` file if you want to override any of these defaults.
 
-### Basic Configuration
+### Built-in Features
 
-A minimal `custom_values.yaml` for a single-node deployment:
+The following features are built into the chart and managed by the ECK operator:
 
+1. **TLS Security**: TLS is enabled by default with self-signed certificates managed by ECK
+2. **Network Ports**: Standard Elasticsearch ports (9200 for HTTP, 9300 for transport) are configured automatically
+3. **Zone Awareness**: Automatic zone distribution for high availability
+4. **Azure Integration**: Azure blob storage support via the repository-azure plugin
+
+### Default Configuration
+
+The chart will work with an empty `custom_values.yaml` file or even without one. All necessary defaults are built into the chart in values.yaml.
+
+For example, this is a valid deployment that will use all the default values:
+```bash
+helm install elasticsearch ./elastic-search
+```
+
+### Override Examples
+
+If you want to customize the deployment, you can override specific values. For example:
+
+1. To change storage size for production use:
 ```yaml
-elasticVersion: "8.17.0"
-storageSize: "30Gi"
-storageClass: "managed-premium"
+storageSize: "100Gi"  # Recommended for production
 ```
 
-### Production Configuration
-
-A recommended `custom_values.yaml` for production use with snapshots enabled:
-
+2. To use a different Azure storage account:
 ```yaml
-# Elasticsearch Version
-elasticVersion: "8.17.0"
-
-# Storage Configuration
-storageSize: "100Gi"
-storageClass: "managed-premium"
-
-# Azure Integration
 azure:
-  storageAccountName: "elasticsnapshots"  # Your Azure storage account for snapshots
-
-# Instance Configuration
-elasticInstances: 1  # Number of separate Elasticsearch clusters
+  snapshots:
+    storageAccountName: "elasticsnapshots"
+    containerName: "mybackups"
 ```
 
-### Multi-Instance Configuration
-
-Example `custom_values.yaml` for deploying multiple instances:
-
+3. To deploy multiple Elasticsearch clusters:
 ```yaml
-# First Instance (custom_values_1.yaml)
-elasticVersion: "8.17.0"
-storageSize: "50Gi"
-azure:
-  storageAccountName: "elasticsnapshots1"
-
-# Second Instance (custom_values_2.yaml)
-elasticVersion: "8.17.0"
-storageSize: "50Gi"
-azure:
-  storageAccountName: "elasticsnapshots2"
+elasticInstances: 2  # Will deploy two separate 3-node ES clusters
 ```
 
-## Azure Blob Storage Integration
-
-The chart automatically configures Azure Blob Storage for snapshots when `azure.storageAccountName` is provided. This includes:
-
-1. Installing the `repository-azure` plugin
-2. Configuring Azure authentication using Workload Identity
-3. Setting up the necessary repository settings via JVM properties
-
-### Prerequisites for Azure Integration
-
-1. Create an Azure Storage Account
-2. Configure Workload Identity:
-   - Ensure the service account has the necessary roles assigned
-   - Storage account should allow Workload Identity access
-
-### Snapshot Repository Configuration
-
-After deployment, create a snapshot repository:
-
-```bash
-PUT _snapshot/azure_repo
-{
-  "type": "azure",
-  "settings": {
-    "container": "snapshots"
-  }
-}
+4. To set resource limits and requests for production use:
+```yaml
+resources:
+  requests:
+    cpu: "2"      # Added CPU request (no default)
+    memory: "4Gi" # Increased from default 2Gi
+  limits:
+    cpu: "4"      # Added CPU limit (no default)
+    memory: "8Gi" # Increased from default 2Gi
 ```
-
-## Zone Awareness
-
-The deployment is configured with zone awareness for high availability:
-
-- Pods are distributed across availability zones using topology spread constraints
-- Node attributes are automatically configured using zone labels
-- Allocation awareness is enabled for optimal shard distribution
-
-### Zone Configuration
-
-The chart automatically:
-- Uses node labels for zone awareness
-- Configures topology spread constraints
-- Sets up allocation awareness attributes
-
-No additional configuration is needed for zone awareness as it uses the cluster's existing zone topology.
-
-## Installing Multiple Instances
-
-You can deploy multiple instances of Elasticsearch by using different value files:
-
-```bash
-# Deploy first instance
-helm install elastic-1 ./elastic-search -f custom_values_1.yaml --namespace elastic-1 --create-namespace
-
-# Deploy second instance
-helm install elastic-2 ./elastic-search -f custom_values_2.yaml --namespace elastic-2 --create-namespace
-```
-
-## Maintenance
-
-### Taking Snapshots
-
-Once deployed with Azure Blob Storage configuration, you can create a snapshot repository:
-
-```bash
-PUT _snapshot/azure_repo
-{
-  "type": "azure",
-  "settings": {
-    "container": "snapshots"
-  }
-}
-```
-
-### Upgrading
-
-To upgrade an existing release:
-
-```bash
-helm upgrade [RELEASE_NAME] ./elastic-search -f custom_values.yaml
-```
-
-## Uninstalling
-
-To uninstall/delete a deployment:
-
-```bash
-helm uninstall [RELEASE_NAME] -n [NAMESPACE]
-```
-
-## Notes
-
-- The chart uses init containers to install required plugins before starting Elasticsearch
-- Azure authentication is handled through Workload Identity for enhanced security
-- Memory mapping is disabled by default to avoid vm.max_map_count bootstrap check
-- Zone awareness ensures high availability across availability zones
-
-## Troubleshooting
-
-Common issues and solutions:
-
-1. **Plugin Installation Fails**
-   - Verify network connectivity
-   - Check Elasticsearch version compatibility
-
-2. **Azure Storage Access Issues**
-   - Verify Workload Identity configuration
-   - Check storage account permissions
-   - Ensure storage account name is correct
-
-3. **Zone Distribution Issues**
-   - Verify node labels for zones
-   - Check if enough nodes are available in each zone

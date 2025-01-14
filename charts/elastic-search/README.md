@@ -70,7 +70,7 @@ The following table lists the configurable parameters of the Elasticsearch chart
 | `azure`                            | Azure integration configuration (optional)        | `{}`                              |
 | `azure.configEndpoint`             | Azure App Configuration endpoint                 | `nil`                             |
 | `azure.storageAccountName`         | Azure Storage Account for snapshots             | `nil`                             |
-| `azure.snapshots.containerName`    | Azure Storage Container for snapshots           | `nil`                             |
+| `azure.snapshots.containerName`    | Azure Storage Container for snapshots           | `es-snapshots`                    |
 | `resources.requests.memory`        | Memory request for each ES node                 | `2Gi`                             |
 | `resources.limits.memory`          | Memory limit for each ES node                   | `3Gi`                             |
 | `resources.requests.cpu`           | CPU request for each ES node                    | `1`                               |
@@ -86,14 +86,14 @@ helm install elasticsearch ./elastic-search
 
 ### Azure-Integrated Installation
 
-To enable Azure integration, provide the necessary Azure configuration:
+To enable Azure integration, provide the necessary Azure configuration. The minimal configuration requires:
 
 ```yaml
 azure:
-  configEndpoint: "https://el-config.azconfig.io"
-  storageAccountName: "elasticsnapshots"
-  snapshots:
-    containerName: "backups"
+  storageAccountName: "elasticsnapshots"  # Required for Azure integration
+  configEndpoint: "https://el-config.azconfig.io"  # Optional: for app configuration
+  snapshots:  # Optional: defaults will be used if not specified
+    containerName: "backups"  # Optional: defaults to "es-snapshots"
 ```
 
 When Azure integration is enabled, you must also provide the following Kubernetes secrets:
@@ -109,11 +109,11 @@ When Azure integration is enabled, you must also provide the following Kubernete
 resources:
   requests:
     cpu: "4"
-    memory: "2Gi"
+    memory: "8Gi"
   limits:
     cpu: "8"
-    memory: "4Gi"
-storageSize: "30Gi"
+    memory: "16Gi"
+storageSize: "100Gi"
 ```
 
 2. For multiple instances:
@@ -121,7 +121,7 @@ storageSize: "30Gi"
 elasticInstances: 2  # Deploys two separate clusters
 ```
 
-3. To enable resiliency features:
+3. To disable resiliency features:
 ```yaml
-resiliency: true
+resiliency: false
 ```

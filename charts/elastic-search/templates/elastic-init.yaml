@@ -13,15 +13,31 @@ spec:
   backoffLimit: 2            # Job will fail after 2 unsuccessful retries
   template:
     spec:
-      serviceAccountName: workload-identity-sa  # Specify the service account here
+      serviceAccountName: workload-identity-sa
       initContainers:
-      - name: health-check
-        image: mcr.microsoft.com/cbl-mariner/base/core:2.0
+      - name: wait-for-secret
+        image: docker.elastic.co/elasticsearch/elasticsearch:{{ $.Values.elasticVersion }}
         command: ["/bin/sh"]
         args:
         - -c
         - |
-          tdnf install -y curl jq && \
+          until curl -s -f -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+            https://kubernetes.default.svc/api/v1/namespaces/${NAMESPACE}/secrets/elasticsearch-{{ $i }}-es-elastic-user \
+            --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt; do
+            echo "Waiting for elasticsearch-{{ $i }}-es-elastic-user secret to be created..."
+            sleep 10
+          done
+        env:
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+      - name: health-check
+        image: docker.elastic.co/elasticsearch/elasticsearch:{{ $.Values.elasticVersion }}
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
           while true; do
             health_status=$(curl -u "elastic:$(cat /mnt/elasticsearch-es-elastic-user/elastic)" -k -s "http://elasticsearch-{{ $i }}-es-http.${NAMESPACE}.svc.cluster.local:9200/_cluster/health" | jq -r '.status')
             if [ "$health_status" = "green" ]; then
@@ -41,7 +57,7 @@ spec:
           mountPath: /mnt/elasticsearch-es-elastic-user
       containers:
       - name: elastic-user
-        image: mcr.microsoft.com/cbl-mariner/base/core:2.0
+        image: docker.elastic.co/elasticsearch/elasticsearch:{{ $.Values.elasticVersion }}
         command: ["/bin/sh"]
         args:
         - -c
@@ -93,7 +109,7 @@ data:
     # Read the new user's username and password from Azure KeyVault
     NEW_USERNAME=$(cat /mnt/azure-keyvault/elastic-username-{{ $i }})
     NEW_PASSWORD=$(cat /mnt/azure-keyvault/elastic-password-{{ $i }})
-    
+
     # Define the custom role and user creation JSON payloads
     CUSTOM_ELASTIC_ROLE="service-role"
     ROLE_JSON="{\"cluster\":[\"all\"],\"indices\":[{\"names\":[\"*\"],\"privileges\":[\"read\",\"write\",\"create\",\"delete\",\"index\",\"monitor\",\"create_index\",\"delete_index\",\"view_index_metadata\",\"manage\"]}]}"
@@ -143,7 +159,7 @@ data:
 
         # Test the new user credentials
         test_response=$(curl -s -k -o /dev/null -w "%{http_code}" -u "$NEW_USERNAME:$NEW_PASSWORD" -k "${ES_SERVICE_URL}")
-        
+
         if [ "$test_response" -eq 200 ]; then
           echo "Successfully authenticated with updated user credentials."
         else
@@ -166,7 +182,7 @@ data:
 
         # Test the new user credentials
         test_response=$(curl -s -k -o /dev/null -w "%{http_code}" -u "$NEW_USERNAME:$NEW_PASSWORD" -k "${ES_SERVICE_URL}")
-        
+
         if [ "$test_response" -eq 200 ]; then
           echo "Successfully authenticated with new user credentials."
         else

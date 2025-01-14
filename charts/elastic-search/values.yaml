@@ -10,7 +10,7 @@ azure:
     containerName: "snapshots"
 
 elasticInstances: 1
-elasticVersion: "8.15.3"
+elasticVersion: "8.17.0"
 storageSize: "30Gi"
 storageClass: "managed-premium"
 

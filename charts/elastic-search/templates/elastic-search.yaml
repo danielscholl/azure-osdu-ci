@@ -10,13 +10,6 @@ metadata:
     eck.k8s.elastic.co/downward-node-labels: "topology.kubernetes.io/zone"
 spec:
   version: {{ $.Values.elasticVersion }}
-  config:
-    # Azure Repository Plugin settings
-    repository.azure.client.default.account: {{ $.Values.azure.storageAccountName }}
-    repository.azure.client.default.auth: "MSI"
-    repository.azure.token_file: "/var/run/secrets/azure/tokens/azure-identity-token"
-    node.attr.zone: "${ZONE}"
-    cluster.routing.allocation.awareness.attributes: k8s_node_name,zone
   http:
     tls:
       selfSignedCertificate:
@@ -27,9 +20,9 @@ spec:
   nodeSets:
     - name: default
       count: 1
-      plugins:
-        - repository-azure
       config:
+        node.attr.zone: "${ZONE}"
+        cluster.routing.allocation.awareness.attributes: k8s_node_name,zone
         # Disable memory mapping to avoid vm.max_map_count bootstrap check
         node.store.allow_mmap: false
       podTemplate:
@@ -37,12 +30,30 @@ spec:
           labels:
             azure.workload.identity/use: "true"
         spec:
+          initContainers:
+          - name: install-plugins
+            command:
+            - sh
+            - -c
+            - |
+              bin/elasticsearch-plugin install --batch repository-azure
           serviceAccountName: workload-identity-sa
           containers:
             - name: elasticsearch
               env:
+                - name: ZONE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['topology.kubernetes.io/zone']
                 - name: AZURE_FEDERATED_TOKEN_FILE
                   value: /var/run/secrets/azure/tokens/azure-identity-token
+                {{- if $.Values.azure.storageAccountName }}
+                - name: ES_JAVA_OPTS
+                  value: >-
+                    -Drepository.azure.client.default.account={{ $.Values.azure.storageAccountName }}
+                    -Drepository.azure.client.default.auth=MSI
+                    -Drepository.azure.token_file=/var/run/secrets/azure/tokens/azure-identity-token
+                {{- end }}
           tolerations:
             - effect: NoSchedule
               key: app
@@ -58,21 +69,14 @@ spec:
                           - z1pool
                           - z2pool
                           - z3pool
-                  - matchExpressions:
-                      - key: topology.kubernetes.io/zone
-                        operator: In
-                        values:
-                          - "$(ZONE)-1"
-                          - "$(ZONE)-2"
-                          - "$(ZONE)-3"
           topologySpreadConstraints:
             - maxSkew: 1
               topologyKey: topology.kubernetes.io/zone
               whenUnsatisfiable: DoNotSchedule
               labelSelector:
                 matchLabels:
-                  elasticsearch.k8s.elastic.co/cluster-name: elasticsearch
-                  elasticsearch.k8s.elastic.co/statefulset-name: elasticsearch-es-default
+                  elasticsearch.k8s.elastic.co/cluster-name: elasticsearch-{{ $i }}
+                  elasticsearch.k8s.elastic.co/statefulset-name: elasticsearch-{{ $i }}-es-default
       volumeClaimTemplates:
         - metadata:
             name: elasticsearch-data

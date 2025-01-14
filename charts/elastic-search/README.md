@@ -7,14 +7,30 @@ This Helm chart deploys Elasticsearch instances on Kubernetes with support for m
 - Kubernetes 1.19+
 - Helm 3.0+
 - ECK Operator 2.16.0+ installed in the cluster
-- Azure Workload Identity configured for Azure Blob Storage access
 
 ## Features
 
 - Zone awareness for high availability
-- Azure Blob Storage integration for snapshots
+- Optional Azure integration for enhanced features
 - Automatic plugin installation
+- Kibana deployment with secure authentication
+- Multiple deployment modes: Basic and Azure-integrated
+
+## Deployment Modes
+
+### Basic Mode (Default)
+When deployed without Azure configuration, the chart will:
+- Deploy Elasticsearch with ECK operator management
+- Configure Kibana with secure service account authentication
+- Use built-in high availability features
+- Work out of the box with minimal configuration
+
+### Azure-Integrated Mode
+When Azure configuration is provided, the chart enables:
+- Azure Blob Storage integration for snapshots
+- Azure App Configuration integration
 - Workload Identity integration for secure Azure authentication
+- Custom authentication via provided secrets
 
 ## High Availability Architecture
 
@@ -42,68 +58,70 @@ Each instance is a complete, independent Elasticsearch deployment with its own h
 
 ## Parameters
 
-The following table lists the configurable parameters of the Elasticsearch chart and their default values. All parameters are optional and will use their defaults if not specified:
+The following table lists the configurable parameters of the Elasticsearch chart and their default values:
 
 | Parameter                           | Description                                      | Default                           |
 |------------------------------------|--------------------------------------------------|-----------------------------------|
 | `elasticInstances`                 | Number of separate Elasticsearch deployments     | `1`                               |
 | `elasticVersion`                   | Elasticsearch version to deploy                  | `8.17.0`                          |
-| `storageSize`                      | Storage size for each Elasticsearch node         | `4Gi` (minimum for managed-premium)|
+| `storageSize`                      | Storage size for each Elasticsearch node         | `4Gi`                             |
 | `storageClass`                     | Storage class for persistence                    | `managed-premium`                 |
-| `azure.snapshots.storageAccountName`| Azure Storage Account for snapshots             | `el-snapshots`                    |
-| `azure.snapshots.containerName`    | Azure Storage Container for snapshots           | `snapshots`                       |
+| `resiliency`                       | Enable node affinity and tolerations             | `true`                            |
+| `azure`                            | Azure integration configuration (optional)        | `{}`                              |
+| `azure.configEndpoint`             | Azure App Configuration endpoint                 | `nil`                             |
+| `azure.storageAccountName`         | Azure Storage Account for snapshots             | `nil`                             |
+| `azure.snapshots.containerName`    | Azure Storage Container for snapshots           | `nil`                             |
 | `resources.requests.memory`        | Memory request for each ES node                 | `2Gi`                             |
-| `resources.limits.memory`          | Memory limit for each ES node                   | `2Gi`                             |
+| `resources.limits.memory`          | Memory limit for each ES node                   | `3Gi`                             |
+| `resources.requests.cpu`           | CPU request for each ES node                    | `1`                               |
+| `resources.limits.cpu`             | CPU limit for each ES node                      | `2`                               |
 
-> Note: All parameters have built-in defaults defined in values.yaml. You only need to create a `custom_values.yaml` file if you want to override any of these defaults.
+### Basic Installation
 
-### Built-in Features
+The chart will work with minimal configuration. For a basic installation:
 
-The following features are built into the chart and managed by the ECK operator:
-
-1. **TLS Security**: TLS is enabled by default with self-signed certificates managed by ECK
-2. **Network Ports**: Standard Elasticsearch ports (9200 for HTTP, 9300 for transport) are configured automatically
-3. **Zone Awareness**: Automatic zone distribution for high availability
-4. **Azure Integration**: Azure blob storage support via the repository-azure plugin
-
-### Default Configuration
-
-The chart will work with an empty `custom_values.yaml` file or even without one. All necessary defaults are built into the chart in values.yaml.
-
-For example, this is a valid deployment that will use all the default values:
 ```bash
 helm install elasticsearch ./elastic-search
 ```
 
-### Override Examples
+### Azure-Integrated Installation
 
-If you want to customize the deployment, you can override specific values. For example:
+To enable Azure integration, provide the necessary Azure configuration:
 
-1. To change storage size for production use:
-```yaml
-storageSize: "100Gi"  # Recommended for production
-```
-
-2. To use a different Azure storage account:
 ```yaml
 azure:
+  configEndpoint: "https://el-config.azconfig.io"
+  storageAccountName: "elasticsnapshots"
   snapshots:
-    storageAccountName: "elasticsnapshots"
-    containerName: "mybackups"
+    containerName: "backups"
 ```
 
-3. To deploy multiple Elasticsearch clusters:
-```yaml
-elasticInstances: 2  # Will deploy two separate 3-node ES clusters
-```
+When Azure integration is enabled, you must also provide the following Kubernetes secrets:
+- `elasticsearch-credentials`: Contains authentication credentials
+  - `username-{i}`: Username for instance i
+  - `password-{i}`: Password for instance i
+  - `key-{i}`: Encryption key for instance i
 
-4. To set resource limits and requests for production use:
+### Resource Configuration Examples
+
+1. For production use with higher resources:
 ```yaml
 resources:
   requests:
-    cpu: "2"      # Added CPU request (no default)
-    memory: "4Gi" # Increased from default 2Gi
+    cpu: "4"
+    memory: "2Gi"
   limits:
-    cpu: "4"      # Added CPU limit (no default)
-    memory: "8Gi" # Increased from default 2Gi
+    cpu: "8"
+    memory: "4Gi"
+storageSize: "30Gi"
+```
+
+2. For multiple instances:
+```yaml
+elasticInstances: 2  # Deploys two separate clusters
+```
+
+3. To enable resiliency features:
+```yaml
+resiliency: true
 ```

@@ -3,14 +3,16 @@
 
 fullnameOverride: elastic-search
 
-# Azure Configuration
-azure:
-  # Azure App Configuration endpoint
-  configEndpoint: "https://el-config.azconfig.io"
-  # Azure Storage Account settings for snapshots
-  storageAccountName: "el-snapshots"
-  snapshots:
-    containerName: "snapshots"
+azure: {}
+
+# Azure Configuration (optional)
+# azure:
+#   # Azure App Configuration endpoint
+#   configEndpoint: "https://el-config.azconfig.io"
+#   # Azure Storage Account settings for snapshots
+#   storageAccountName: "el-snapshots"
+#   # snapshots:
+#   #   containerName: "snapshots"
 
 # Elasticsearch Configuration
 elasticInstances: 1

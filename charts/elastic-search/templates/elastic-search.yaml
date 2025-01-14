@@ -10,19 +10,26 @@ metadata:
     eck.k8s.elastic.co/downward-node-labels: "topology.kubernetes.io/zone"
 spec:
   version: {{ $.Values.elasticVersion }}
+  {{- if $.Values.azure.storageAccountName }}
   secureSettings:
   - secretName: {{ $.Release.Name }}-keystore
+  {{- end }}
   nodeSets:
   - name: default
     count: 1
     podTemplate:
       metadata:
+        {{- if $.Values.azure }}
         labels:
           azure.workload.identity/use: "true"
+        {{- end }}
       spec:
+        {{- if $.Values.azure }}
         serviceAccountName: workload-identity-sa
+        {{- end }}
         containers:
         - name: elasticsearch
+          {{- if $.Values.azure }}
           env:
           - name: AZURE_FEDERATED_TOKEN_FILE
             value: /usr/share/elasticsearch/config/azure/tokens/azure-identity-token
@@ -30,17 +37,15 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.annotations['topology.kubernetes.io/zone']
+          {{- end }}
           resources:
-            requests:
-              memory: "2Gi"
-              cpu: "1"
-            limits:
-              memory: "3Gi"
-              cpu: "2"
+            {{- toYaml $.Values.resources | nindent 12 }}
+          {{- if $.Values.azure }}
           volumeMounts:
             - name: azure-identity-token
               mountPath: /usr/share/elasticsearch/config/azure/tokens
-        {{- if $.Values.resiliency | default false }}
+          {{- end }}
+        {{- if $.Values.resiliency }}
         tolerations:
         - effect: NoSchedule
           key: app
@@ -67,8 +72,10 @@ spec:
     config:
       node.store.allow_mmap: false
       node.roles: ["master", "data", "ingest"]
+      {{- if $.Values.azure }}
       node.attr.zone: "${NODE_ZONE}"
       cluster.routing.allocation.awareness.attributes: k8s_node_name,zone
+      {{- end }}
     volumeClaimTemplates:
     - metadata:
         name: elasticsearch-data

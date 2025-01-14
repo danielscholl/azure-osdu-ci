@@ -43,6 +43,7 @@ spec:
               env:
                 - name: AZURE_FEDERATED_TOKEN_FILE
                   value: /var/run/secrets/azure/tokens/azure-identity-token
+          {{- if $.Values.resiliency | default false }}
           tolerations:
             - effect: NoSchedule
               key: app
@@ -73,6 +74,7 @@ spec:
                 matchLabels:
                   elasticsearch.k8s.elastic.co/cluster-name: elasticsearch
                   elasticsearch.k8s.elastic.co/statefulset-name: elasticsearch-es-default
+          {{- end }}
       volumeClaimTemplates:
         - metadata:
             name: elasticsearch-data
@@ -81,6 +83,6 @@ spec:
               - ReadWriteOnce
             resources:
               requests:
-                storage: {{ $.Values.storageSize }}
+                storage: {{ $.Values.storageSize | default "4Gi" }}
             storageClassName: {{ $.Values.storageClass | default "managed-premium" }}
 {{- end }}

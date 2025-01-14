@@ -13,6 +13,7 @@ elasticInstances: 1
 elasticVersion: "8.17.0"
 # storageSize: "4Gi"
 # storageClass: "managed-premium"
+resiliency: true
 
 # Resource limits and requests
 resources: {}

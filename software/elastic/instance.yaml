@@ -6,7 +6,6 @@ metadata:
 spec:
   targetNamespace: elastic
   releaseName: elastic-search
-  # Add dependsOn section here
   dependsOn:
     - name: elastic-operator
       namespace: flux-system
@@ -31,6 +30,6 @@ spec:
     elasticsearch:
       instances:
         - version: 8.17.0
-          nodeSelector:
-            toleration: "cluster-paas"
+          nodeSelector: "cluster-paas"
+          zones: 3
 

@@ -21,7 +21,7 @@ metadata:
   annotations:
     kibana.k8s.elastic.co/skip-auth-config: "true" # Disable service account auth.
 spec:
-  version: {{ $.Values.elasticVersion }}
+  version: {{ $.Values.elasticVersion | default $.Chart.AppVersion }}
   {{- if not $.Values.azure }}
   elasticsearchRef:
     name: elasticsearch-{{ $i }}
@@ -37,34 +37,16 @@ spec:
   podTemplate:
     spec:
       {{- if $.Values.nodeSelector }}
-      {{- if $.Values.nodeSelector.toleration }}
+      nodeSelector:
+        agentpool: z2pool
       tolerations:
       - effect: NoSchedule
         key: app
-        value: {{ $.Values.nodeSelector.toleration }}
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: agentpool
-                operator: In
-                values:
-                - z1pool
-                - z2pool
-                - z3pool
-            - matchExpressions:
-              - key: topology.kubernetes.io/zone
-                operator: In
-                values:
-                - "$(ZONE)-1"
-                - "$(ZONE)-2"
-                - "$(ZONE)-3"
-      {{- end }}
+        value: {{ $.Values.nodeSelector }}
       {{- end }}
       initContainers:
       - name: health-check
-        image: docker.elastic.co/kibana/kibana:{{ $.Values.elasticVersion }}
+        image: docker.elastic.co/kibana/kibana:{{ $.Values.elasticVersion | default $.Chart.AppVersion }}
         command: ["/bin/sh"]
         args:
         - -c

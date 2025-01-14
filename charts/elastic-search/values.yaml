@@ -5,25 +5,32 @@ fullnameOverride: elastic-search
 
 # Elasticsearch Configuration
 elasticInstances: 1                                  # Number of Elasticsearch instances
-elasticVersion: "8.17.0"                             # Elasticsearch version
+# elasticVersion: "8.17.0"                           # Optional: Elasticsearch version (defaults to Chart's appVersion)
 
-# Resource limits and requests for Elasticsearch pods
-resources:
-  requests:
-    cpu: "1"
-    memory: "2Gi"
-  limits:
-    cpu: "2"
-    memory: "3Gi"
-
-# Node placement configuration (optional)
-# Specify toleration to enable node placement features
-nodeSelector:
-  toleration: "cluster-paas"
 
 # Storage Configuration (optional)
-storageSize: "4Gi"                                   # Storage size
-storageClass: "managed-premium"                      # Storage class
+# storageSize: "4Gi"                                   # Storage size
+# storageClass: "managed-premium"                      # Storage class
+
+
+# Resource Configuration (optional)
+# resources:
+#   requests:
+#     cpu: "1"
+#     memory: "2Gi"
+#   limits:
+#     cpu: "2"
+#     memory: "3Gi"
+
+
+# Node Configuration (optional)
+nodeSelector: "cluster-paas"
+
+# High Availability Configuration (optional)
+# 1: Single node (default)
+# 2: Two node cluster (not recommended for production)
+# 3: Three node HA cluster
+# zones: 1
 
 # Azure Configuration (optional)
 azure: {}

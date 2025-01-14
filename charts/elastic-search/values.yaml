@@ -30,10 +30,10 @@ nodeSelector: "cluster-paas"
 # 1: Single node (default)
 # 2: Two node cluster (not recommended for production)
 # 3: Three node HA cluster
-# zones: 1
+zones: 1
 
 # Azure Configuration (optional)
-azure: {}
+# azure: {}
 # azure:
 #   configEndpoint: "https://el-config.azconfig.io"  # Azure App Configuration endpoint
 #   storageAccountName: "el-snapshots"               # Enable Snapshots by providing a Storage Account name

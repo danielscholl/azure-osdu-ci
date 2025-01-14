@@ -42,6 +42,11 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
+        env:
+        - name: NODE_ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
   - name: zone2
     count: 1
     config:
@@ -66,6 +71,11 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
+        env:
+        - name: NODE_ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
   - name: zone3
     count: 1
     config:
@@ -90,6 +100,11 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
+        env:
+        - name: NODE_ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
   {{- else if eq (int $.Values.zones) 2 }}
   # Two node cluster configuration - one master-eligible node and one data-only node
   - name: zone1
@@ -117,6 +132,11 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
+        env:
+        - name: NODE_ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
   - name: zone2
     count: 1
     config:
@@ -142,6 +162,11 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
+        env:
+        - name: NODE_ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
   {{- else }}
   # Single node configuration
   - name: default
@@ -168,6 +193,11 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
+        env:
+        - name: NODE_ZONE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.labels['topology.kubernetes.io/zone']
   {{- end }}
     volumeClaimTemplates:
     - metadata:

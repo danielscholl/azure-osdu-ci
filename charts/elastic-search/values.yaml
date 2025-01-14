@@ -3,24 +3,32 @@
 
 fullnameOverride: elastic-search
 
+# Azure Configuration
 azure:
+  # Azure App Configuration endpoint
   configEndpoint: "https://el-config.azconfig.io"
+  # Azure Storage Account settings for snapshots
+  storageAccountName: "el-snapshots"
   snapshots:
-    storageAccountName: "el-snapshots"
     containerName: "snapshots"
 
+# Elasticsearch Configuration
 elasticInstances: 1
 elasticVersion: "8.17.0"
-# storageSize: "4Gi"
-# storageClass: "managed-premium"
+
+# Storage Configuration
+storageSize: "4Gi"
+storageClass: "managed-premium"
+
+# Enable resiliency features (node affinity, tolerations, etc.)
 resiliency: true
 
-# Resource limits and requests
-resources: {}
-  # requests:
-  #   cpu: "2"
-  #   memory: "4Gi"
-  # limits:
-  #   cpu: "4"
-  #   memory: "8Gi"
+# Resource limits and requests for Elasticsearch pods
+resources:
+  requests:
+    cpu: "1"
+    memory: "2Gi"
+  limits:
+    cpu: "2"
+    memory: "3Gi"
 

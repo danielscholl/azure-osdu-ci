@@ -129,10 +129,6 @@ spec:
     config:
       node.store.allow_mmap: false
       node.roles: ["master", "data", "ingest"]
-      {{- if $.Values.azure }}
-      node.attr.zone: "${NODE_ZONE}"
-      cluster.routing.allocation.awareness.attributes: k8s_node_name,zone
-      {{- end }}
     podTemplate:
       metadata:
         {{- if $.Values.azure }}
@@ -148,33 +144,6 @@ spec:
           key: app
           value: {{ $.Values.nodeSelector }}
         {{- end }}
-        volumes:
-        - name: node-zone
-          downwardAPI:
-            items:
-            - path: "zone"
-              fieldRef:
-                fieldPath: spec.nodeName
-        initContainers:
-        - name: init-node-zone
-          image: busybox
-          command: ['sh', '-c', 'NODE_NAME=$(cat /node/zone); export NODE_ZONE=$(echo $NODE_NAME | cut -d"-" -f2); echo $NODE_ZONE > /shared/node-zone; echo "Node zone set to: $(cat /shared/node-zone)"']
-          volumeMounts:
-          - name: node-zone
-            mountPath: /node
-          - name: shared-data
-            mountPath: /shared
-        env:
-        - name: NODE_ZONE
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        volumeMounts:
-        - name: shared-data
-          mountPath: /shared
-        volumes:
-        - name: shared-data
-          emptyDir: {}
   {{- end }}
     volumeClaimTemplates:
     - metadata:

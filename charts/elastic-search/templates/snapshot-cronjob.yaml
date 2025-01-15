@@ -53,7 +53,7 @@ spec:
                   name: elasticsearch-{{ $i }}-es-elastic-user
                   key: elastic
             - name: AZURE_CONTAINER_NAME
-              value: {{ default "es-snapshots" (dig "snapshots" "containerName" "es-snapshots" $.Values.azure) }}
+              value: {{ $.Values.azure.storageAccountContainer | default "el-snapshots" }}
           restartPolicy: OnFailure
 {{- end }}
 {{- end }}

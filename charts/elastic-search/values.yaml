@@ -1,19 +1,33 @@
+# Default values for elastic-search
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 
+# Override the release name
 fullnameOverride: elastic-search
 
-# Elasticsearch Configuration
-elasticInstances: 1                                  # Number of Elasticsearch instances
-# elasticVersion: "8.17.0"                           # Optional: Elasticsearch version (defaults to Chart's appVersion)
+#----------------------------------------------------------------------------------
+# Elasticsearch Core Configuration
+#----------------------------------------------------------------------------------
+# elasticVersion: "8.17.0"    # Elasticsearch version (defaults to Chart's appVersion)
+# elasticInstances: 1         # Number of Elasticsearch instances
 
 
-# Storage Configuration (optional)
-# storageSize: "4Gi"                                   # Storage size
-# storageClass: "managed-premium"                      # Storage class
+#----------------------------------------------------------------------------------
+# Node Placement Configuration
+#----------------------------------------------------------------------------------
+# nodeSelector: "cluster-paas"
 
 
-# Resource Configuration (optional)
+#----------------------------------------------------------------------------------
+# Storage Configuration
+#----------------------------------------------------------------------------------
+# storage:
+#   size: "4Gi"             # Storage size for each Elasticsearch node
+#   class: "managed-premium" # Kubernetes storage class to use
+
+
+#----------------------------------------------------------------------------------
+# Resource Configuration
+#----------------------------------------------------------------------------------
 # resources:
 #   requests:
 #     cpu: "1"
@@ -23,19 +37,22 @@ elasticInstances: 1                                  # Number of Elasticsearch i
 #     memory: "3Gi"
 
 
-# Node Configuration (optional)
-nodeSelector: "cluster-paas"
+#----------------------------------------------------------------------------------
+# High Availability Configuration
+#
+#   1: Single node, all roles (default)
+#   2: Two nodes - one master+data, one data-only (not recommended)
+#   3: Three nodes - all roles, full HA (recommended for production)
+#----------------------------------------------------------------------------------
+# zones: 1
 
-# High Availability Configuration (optional)
-# 1: Single node (default)
-# 2: Two node cluster (not recommended for production)
-# 3: Three node HA cluster
-zones: 1
 
-# Azure Configuration (optional)
-# azure: {}
+#----------------------------------------------------------------------------------
+# Azure Integration Configuration
+#----------------------------------------------------------------------------------
+# Azure configuration for App Config and Snapshot support
+azure: {}
 # azure:
-#   configEndpoint: "https://el-config.azconfig.io"  # Azure App Configuration endpoint
-#   storageAccountName: "el-snapshots"               # Enable Snapshots by providing a Storage Account name
-#   snapshots:
-#     containerName: "snapshots"                     # Storage AccountContainer name
+#   configEndpoint: "https://el-config.azconfig.io"    # Azure App Configuration endpoint
+#   storageAccountName: "el-snapshots"                 # Storage account for snapshots
+#   storageAccountContainer: "el-snapshots"            # Container name for snapshots
